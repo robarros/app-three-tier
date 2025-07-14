@@ -59,7 +59,17 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
-    return crud.create_user(db=db, user=user)
+    new_user = crud.create_user(db=db, user=user)
+    
+    # Limpa cache de listagem quando criar um novo usuário
+    try:
+        # Remove todas as chaves de cache de listagem
+        for key in redis_client.scan_iter(match="users:skip:*"):
+            redis_client.delete(key)
+    except:
+        pass
+    
+    return new_user
 
 # Create a response model for paginated users
 class PaginatedUsers(BaseModel):
@@ -70,7 +80,32 @@ class PaginatedUsers(BaseModel):
 
 @app.get("/users/", response_model=List[UserResponse])
 def read_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    cache_key = f"users:skip:{skip}:limit:{limit}"
+    
+    # Tenta buscar no cache, mas trata erro se Redis não estiver disponível
+    try:
+        cached_users = redis_client.get(cache_key)
+        if cached_users:
+            users_data = json.loads(cached_users)
+            return [UserResponse(**user) for user in users_data]
+    except redis.ConnectionError:
+        # Redis não disponível, continua sem cache
+        pass
+    except Exception:
+        # Qualquer outro erro do Redis, continua sem cache
+        pass
+    
+    # Busca no banco de dados
     users = crud.get_users(db, skip=skip, limit=limit)
+    
+    # Tenta salvar no cache, mas não falha se Redis não estiver disponível
+    try:
+        users_json = [UserResponse.model_validate(user).model_dump() for user in users]
+        redis_client.setex(cache_key, CACHE_EXPIRE_SECONDS, json.dumps(users_json, default=str))
+    except:
+        # Falha silenciosamente se não conseguir salvar no cache
+        pass
+    
     return users
 
 @app.get("/users/{user_id}", response_model=UserResponse)
@@ -115,10 +150,13 @@ def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    # Tenta limpar cache, mas não falha se Redis não estiver disponível
+    # Limpa cache do usuário específico e cache de listagem
     try:
         cache_key = f"user:{user_id}"
         redis_client.delete(cache_key)
+        # Remove cache de listagem também
+        for key in redis_client.scan_iter(match="users:skip:*"):
+            redis_client.delete(key)
     except:
         pass
     return db_user
@@ -130,10 +168,13 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    # Tenta limpar cache, mas não falha se Redis não estiver disponível
+    # Limpa cache do usuário específico e cache de listagem
     try:
         cache_key = f"user:{user_id}"
         redis_client.delete(cache_key)
+        # Remove cache de listagem também
+        for key in redis_client.scan_iter(match="users:skip:*"):
+            redis_client.delete(key)
     except:
         pass
     
