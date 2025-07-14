@@ -31,10 +31,10 @@ random_email() {
     echo "${email_name}@${domain}"
 }
 
-echo "Iniciando criação de 300 usuários..."
+echo "Iniciando criação de 100 usuários..."
 echo "Progresso: 0%"
 
-for i in {1..300}
+for i in {1..100}
 do
     name=$(random_name)
     email=$(random_email "$name")
