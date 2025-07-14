@@ -3,10 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
 from pydantic import BaseModel
+import os
+import redis
+import json
 
 from database import get_db, Base, engine
 from schemas import UserCreate, UserUpdate, UserResponse
 import crud
+
+# Redis client
+redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+redis_client = redis.from_url(redis_url, decode_responses=True)
+
+# Tempo de expiração do cache em segundos
+CACHE_EXPIRE_SECONDS = int(os.getenv("CACHE_EXPIRE_SECONDS", 300))
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -58,12 +68,18 @@ def read_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
 
 @app.get("/users/{user_id}", response_model=UserResponse)
 def read_user(user_id: int, db: Session = Depends(get_db)):
+    cache_key = f"user:{user_id}"
+    cached_user = redis_client.get(cache_key)
+    if cached_user:
+        return json.loads(cached_user)
     db_user = crud.get_user(db, user_id=user_id)
     if db_user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+    # Serializa o usuário para cache
+    redis_client.setex(cache_key, CACHE_EXPIRE_SECONDS, json.dumps(UserResponse.model_validate(db_user).model_dump()))
     return db_user
 
 @app.put("/users/{user_id}", response_model=UserResponse)
@@ -74,6 +90,9 @@ def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+    # Limpa cache do usuário atualizado
+    cache_key = f"user:{user_id}"
+    redis_client.delete(cache_key)
     return db_user
 
 @app.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -83,6 +102,9 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+    # Limpa cache do usuário deletado
+    cache_key = f"user:{user_id}"
+    redis_client.delete(cache_key)
 
 if __name__ == "__main__":
     import uvicorn
