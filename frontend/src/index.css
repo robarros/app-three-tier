@@ -150,6 +150,11 @@ code {
 }
 
 .users-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
   background: #f8f9fa;
   padding: 1.5rem;
   border-bottom: 1px solid #dee2e6;
@@ -158,6 +163,49 @@ code {
 .users-header h2 {
   margin: 0;
   color: #333;
+}
+
+.search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-small {
+  width: 250px;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border: 2px solid #ddd;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.search-input-small:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #999;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.clear-search-btn:hover {
+  background-color: #f0f0f0;
+  color: #666;
 }
 
 .user-item {
@@ -298,5 +346,19 @@ code {
   
   .edit-form {
     grid-template-columns: 1fr;
+  }
+  
+  .users-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .search-container {
+    width: 100%;
+  }
+  
+  .search-input-small {
+    width: 100%;
   }
 }

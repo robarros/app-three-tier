@@ -17,10 +17,34 @@ function App() {
     totalUsers: 0,
     usersPerPage: 10
   });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
-    loadUsers();
+    if (isSearching && searchTerm.trim()) {
+      searchUsers();
+    } else if (!searchTerm.trim()) {
+      setIsSearching(false);
+      loadUsers();
+    }
   }, [pagination.currentPage]); // Reload when page changes
+
+  // Debounce para busca automática
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      if (searchTerm.trim()) {
+        setIsSearching(true);
+        setPagination(prev => ({ ...prev, currentPage: 1 }));
+        searchUsers();
+      } else {
+        setIsSearching(false);
+        setPagination(prev => ({ ...prev, currentPage: 1 }));
+        loadUsers();
+      }
+    }, 500); // 500ms de delay
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm]);
 
   const loadUsers = async () => {
     try {
@@ -41,6 +65,30 @@ function App() {
     } catch (error) {
       console.error('Error loading users:', error);
       setMessage({ type: 'error', text: 'Erro ao carregar usuários' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const searchUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await userService.searchUsers(searchTerm, pagination.currentPage, pagination.usersPerPage);
+      console.log('Search results:', data);
+      setUsers(data.items || []);
+      
+      // Get total count of search results
+      const allSearchResults = await userService.searchUsers(searchTerm, 1, 1000000);
+      const total = allSearchResults.items ? allSearchResults.items.length : 0;
+      console.log('Total search results:', total);
+      
+      setPagination(prev => ({
+        ...prev,
+        totalUsers: total
+      }));
+    } catch (error) {
+      console.error('Error searching users:', error);
+      setMessage({ type: 'error', text: 'Erro ao buscar usuários' });
     } finally {
       setLoading(false);
     }
@@ -216,11 +264,32 @@ function App() {
       <div className="users-list">
         <div className="users-header">
           <h2>Lista de Usuários ({pagination.totalUsers})</h2>
+          <div className="search-container">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por nome ou email..."
+              disabled={loading}
+              className="search-input-small"
+            />
+            {searchTerm && (
+              <button 
+                type="button" 
+                onClick={() => setSearchTerm('')} 
+                className="clear-search-btn"
+                disabled={loading}
+                title="Limpar busca"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
         
         {users.length === 0 ? (
           <div className="no-users">
-            <p>Nenhum usuário cadastrado ainda.</p>
+            <p>{isSearching ? "Nenhum usuário encontrado com este termo." : "Nenhum usuário cadastrado ainda."}</p>
           </div>
         ) : (
           <>

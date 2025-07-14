@@ -228,6 +228,36 @@ def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get
         pass
     return db_user
 
+@app.get("/users/search/", response_model=List[UserResponse])
+def search_users_api(search: str = "", skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    cache_key = f"users:search:{search}:skip:{skip}:limit:{limit}"
+    
+    # Tenta buscar no cache, mas trata erro se Redis não estiver disponível
+    try:
+        cached_users = redis_client.get(cache_key)
+        if cached_users:
+            users_data = json.loads(cached_users)
+            return [UserResponse(**user) for user in users_data]
+    except redis.ConnectionError:
+        # Redis não disponível, continua sem cache
+        pass
+    except Exception:
+        # Qualquer outro erro do Redis, continua sem cache
+        pass
+    
+    # Busca no banco de dados
+    users = crud.search_users(db, search_term=search, skip=skip, limit=limit)
+    
+    # Tenta salvar no cache, mas não falha se Redis não estiver disponível
+    try:
+        users_json = [UserResponse.model_validate(user).model_dump() for user in users]
+        redis_client.setex(cache_key, CACHE_EXPIRE_SECONDS, json.dumps(users_json, default=str))
+    except:
+        # Falha silenciosamente se não conseguir salvar no cache
+        pass
+    
+    return users
+
 @app.delete("/users/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     if not crud.delete_user(db, user_id=user_id):

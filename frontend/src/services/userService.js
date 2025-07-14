@@ -30,6 +30,27 @@ export const userService = {
     }
   },
 
+  // Search users by name or email
+  searchUsers: async (searchTerm = "", page = 1, limit = 10) => {
+    try {
+      const response = await api.get('/users/search/', {
+        params: {
+          search: searchTerm,
+          skip: (page - 1) * limit,
+          limit: limit
+        }
+      });
+      console.log('Search API Response:', response.data);
+      return {
+        items: Array.isArray(response.data) ? response.data : [],
+        total: response.data.length
+      };
+    } catch (error) {
+      console.error('Error searching users:', error);
+      throw error;
+    }
+  },
+
   // Get user by ID
   getUser: async (id) => {
     const response = await api.get(`/users/${id}`);
