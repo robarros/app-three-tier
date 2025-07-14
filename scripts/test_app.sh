@@ -62,11 +62,26 @@ check_service() {
 test_api_endpoints() {
     log "Testando endpoints da API..."
     
-    # Teste de health check
-    if curl -s "$API_URL/health" | grep -q "healthy"; then
-        log_success "Health check OK"
+    # Teste de health check básico
+    if curl -s "$API_URL/health/ready" | grep -q "ready"; then
+        log_success "Readiness check OK"
     else
-        log_error "Health check falhou"
+        log_error "Readiness check falhou"
+        return 1
+    fi
+    
+    # Teste de health check detalhado
+    HEALTH_RESPONSE=$(curl -s "$API_URL/health")
+    if echo "$HEALTH_RESPONSE" | grep -q "healthy" && echo "$HEALTH_RESPONSE" | grep -q "database"; then
+        log_success "Detailed health check OK"
+        # Mostra tempo de resposta se disponível
+        RESPONSE_TIME=$(echo "$HEALTH_RESPONSE" | jq -r '.response_time_ms // "N/A"' 2>/dev/null)
+        if [ "$RESPONSE_TIME" != "N/A" ]; then
+            log "  └─ Response time: ${RESPONSE_TIME}ms"
+        fi
+    else
+        log_error "Detailed health check falhou"
+        log "Response: $HEALTH_RESPONSE"
         return 1
     fi
     

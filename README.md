@@ -140,8 +140,12 @@ O script de teste executa:
 ### Testes Manuais da API
 
 ```bash
-# Health check
+# Health checks
+# Health check detalhado (verifica banco de dados e Redis)
 curl http://localhost:8000/health
+
+# Health check rápido (apenas readiness da aplicação)
+curl http://localhost:8000/health/ready
 
 # Listar usuários
 curl http://localhost:8000/users/
@@ -159,6 +163,52 @@ curl -X PUT http://localhost:8000/users/{id} \
 # Excluir usuário (substitua {id} pelo ID real)
 curl -X DELETE http://localhost:8000/users/{id}
 # Retorna: {"message":"User {id} deleted successfully"}
+```
+
+#### Health Check Endpoints
+
+A aplicação oferece dois tipos de health checks:
+
+**Health Check Detalhado (`/health`)**
+- Verifica conectividade com banco de dados PostgreSQL
+- Verifica conectividade com Redis (cache)
+- Mede tempo de resposta
+- Retorna status detalhado de cada serviço
+- Ideal para monitoramento detalhado
+
+Exemplo de resposta:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-07-14T10:30:45.123456",
+  "version": "1.0.0",
+  "services": {
+    "database": {
+      "status": "healthy",
+      "message": "Database connection successful"
+    },
+    "redis": {
+      "status": "healthy",
+      "message": "Redis connection successful"
+    }
+  },
+  "response_time_ms": 45.67
+}
+```
+
+**Readiness Check (`/health/ready`)**
+- Health check rápido sem dependências externas
+- Verifica apenas se a aplicação está pronta para receber requisições
+- Ideal para load balancers e sistemas de orquestração
+- Resposta mais rápida
+
+Exemplo de resposta:
+```json
+{
+  "status": "ready",
+  "timestamp": "2025-07-14T10:30:45.123456",
+  "message": "Application is ready to serve requests"
+}
 ```
 
 ## 🐳 Docker Services

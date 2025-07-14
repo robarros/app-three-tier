@@ -1,12 +1,14 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict, Any
 from pydantic import BaseModel
 import os
 import redis
 import json
 from datetime import datetime
+import time
+from sqlalchemy import text
 
 from database import get_db, Base, engine
 from schemas import UserCreate, UserUpdate, UserResponse
@@ -47,9 +49,74 @@ app.add_middleware(
 def read_root():
     return {"message": "User Management API is running!"}
 
-@app.get("/health")
-def health_check():
-    return {"status": "healthy"}
+# Health check response model
+class HealthResponse(BaseModel):
+    status: str
+    timestamp: str
+    version: str
+    services: Dict[str, Any]
+    response_time_ms: float
+
+@app.get("/health", response_model=HealthResponse)
+def health_check(db: Session = Depends(get_db)):
+    start_time = time.time()
+    health_status = {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.0.0",
+        "services": {},
+        "response_time_ms": 0.0
+    }
+    
+    # Test database connection
+    try:
+        db.execute(text("SELECT 1"))
+        health_status["services"]["database"] = {
+            "status": "healthy",
+            "message": "Database connection successful"
+        }
+    except Exception as e:
+        health_status["status"] = "unhealthy"
+        health_status["services"]["database"] = {
+            "status": "unhealthy",
+            "message": f"Database connection failed: {str(e)}"
+        }
+    
+    # Test Redis connection
+    try:
+        redis_client.ping()
+        health_status["services"]["redis"] = {
+            "status": "healthy",
+            "message": "Redis connection successful"
+        }
+    except Exception as e:
+        # Redis is optional, so we mark as warning instead of unhealthy
+        health_status["services"]["redis"] = {
+            "status": "warning",
+            "message": f"Redis connection failed: {str(e)}"
+        }
+    
+    # Calculate response time
+    end_time = time.time()
+    health_status["response_time_ms"] = round((end_time - start_time) * 1000, 2)
+    
+    # Determine overall status
+    db_status = health_status["services"]["database"]["status"]
+    if db_status == "unhealthy":
+        health_status["status"] = "unhealthy"
+    elif db_status == "healthy" and health_status["services"]["redis"]["status"] in ["healthy", "warning"]:
+        health_status["status"] = "healthy"
+    
+    return health_status
+
+@app.get("/health/ready")
+def readiness_check():
+    """Simple readiness check without dependencies - faster for load balancers"""
+    return {
+        "status": "ready",
+        "timestamp": datetime.now().isoformat(),
+        "message": "Application is ready to serve requests"
+    }
 
 @app.post("/users/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
