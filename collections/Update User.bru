@@ -1,0 +1,22 @@
+meta {
+  name: Update User
+  type: http
+  seq: 6
+}
+
+put {
+  url: http://localhost:8000/users/%7Bid%7D
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "João Santos",
+    "age": 31
+  }
+}

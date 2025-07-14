@@ -1,0 +1,11 @@
+meta {
+  name: Delete User
+  type: http
+  seq: 7
+}
+
+delete {
+  url: http://localhost:8000/users/%7Bid%7D
+  body: none
+  auth: inherit
+}

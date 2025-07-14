@@ -13,7 +13,7 @@ def get_users(db: Session, skip: int = 0, limit: int = 100) -> List[User]:
     return db.query(User).offset(skip).limit(limit).all()
 
 def create_user(db: Session, user: UserCreate) -> User:
-    db_user = User(**user.dict())
+    db_user = User(**user.model_dump())
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -22,7 +22,7 @@ def create_user(db: Session, user: UserCreate) -> User:
 def update_user(db: Session, user_id: int, user_update: UserUpdate) -> Optional[User]:
     db_user = db.query(User).filter(User.id == user_id).first()
     if db_user:
-        update_data = user_update.dict(exclude_unset=True)
+        update_data = user_update.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(db_user, field, value)
         db.commit()

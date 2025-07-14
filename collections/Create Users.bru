@@ -1,0 +1,23 @@
+meta {
+  name: Create Users
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://localhost:8000/users/
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Ronaldo Teste",
+    "email": "teste@exemplo.com",
+    "age": 30
+  }
+}

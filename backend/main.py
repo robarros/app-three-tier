@@ -6,6 +6,7 @@ from pydantic import BaseModel
 import os
 import redis
 import json
+from datetime import datetime
 
 from database import get_db, Base, engine
 from schemas import UserCreate, UserUpdate, UserResponse
@@ -17,6 +18,12 @@ redis_client = redis.from_url(redis_url, decode_responses=True)
 
 # Tempo de expiração do cache em segundos
 CACHE_EXPIRE_SECONDS = int(os.getenv("CACHE_EXPIRE_SECONDS", 300))
+
+# Serializer customizado para datetime
+def datetime_serializer(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -69,18 +76,36 @@ def read_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
 @app.get("/users/{user_id}", response_model=UserResponse)
 def read_user(user_id: int, db: Session = Depends(get_db)):
     cache_key = f"user:{user_id}"
-    cached_user = redis_client.get(cache_key)
-    if cached_user:
-        return json.loads(cached_user)
+    
+    # Tenta buscar no cache, mas trata erro se Redis não estiver disponível
+    try:
+        cached_user = redis_client.get(cache_key)
+        if cached_user:
+            return json.loads(cached_user)
+    except redis.ConnectionError:
+        # Redis não disponível, continua sem cache
+        pass
+    except Exception:
+        # Qualquer outro erro do Redis, continua sem cache
+        pass
+    
+    # Busca no banco de dados
     db_user = crud.get_user(db, user_id=user_id)
     if db_user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    # Serializa o usuário para cache
-    redis_client.setex(cache_key, CACHE_EXPIRE_SECONDS, json.dumps(UserResponse.model_validate(db_user).model_dump()))
-    return db_user
+    
+    # Tenta salvar no cache, mas não falha se Redis não estiver disponível
+    user_response = UserResponse.model_validate(db_user)
+    try:
+        redis_client.setex(cache_key, CACHE_EXPIRE_SECONDS, user_response.model_dump_json())
+    except:
+        # Falha silenciosamente se não conseguir salvar no cache
+        pass
+    
+    return user_response
 
 @app.put("/users/{user_id}", response_model=UserResponse)
 def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get_db)):
@@ -90,9 +115,12 @@ def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    # Limpa cache do usuário atualizado
-    cache_key = f"user:{user_id}"
-    redis_client.delete(cache_key)
+    # Tenta limpar cache, mas não falha se Redis não estiver disponível
+    try:
+        cache_key = f"user:{user_id}"
+        redis_client.delete(cache_key)
+    except:
+        pass
     return db_user
 
 @app.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -102,9 +130,12 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    # Limpa cache do usuário deletado
-    cache_key = f"user:{user_id}"
-    redis_client.delete(cache_key)
+    # Tenta limpar cache, mas não falha se Redis não estiver disponível
+    try:
+        cache_key = f"user:{user_id}"
+        redis_client.delete(cache_key)
+    except:
+        pass
 
 if __name__ == "__main__":
     import uvicorn
