@@ -37,8 +37,11 @@ app-two-tier/
 │       └── services/
 │           └── userService.js # Cliente API
 └── scripts/                   # Scripts utilitários
-    ├── start_app.sh           # Script para iniciar aplicação
-    └── test_app.sh            # Script de testes
+    ├── start_app.sh          # Script para iniciar aplicação
+    ├── test_app.sh          # Script de testes
+    ├── create_users.sh      # Script para criar usuários em massa
+    └── delete_users.sh      # Script para deletar usuários
+
 ```
 
 ## 🚀 Como Executar
@@ -71,6 +74,44 @@ app-two-tier/
    - **Frontend**: http://localhost:3000
    - **API**: http://localhost:8000
    - **Documentação da API**: http://localhost:8000/docs
+
+## 📱 Funcionalidades
+
+### Interface do Usuário
+- ✨ Interface moderna e responsiva
+- 📝 Formulário de cadastro e edição de usuários
+- 📋 Lista de usuários com paginação (10 usuários por página)
+- 🔄 Botão de atualização para recarregar a lista
+- 🗑️ Exclusão de usuários com confirmação
+- ✏️ Edição inline de usuários
+- 📊 Indicador do total de usuários
+
+### Scripts Utilitários
+
+#### Criação em Massa de Usuários
+```bash
+./scripts/create_users.sh
+```
+- Cria 300 usuários com dados aleatórios
+- Gera nomes brasileiros realistas
+- Mostra progresso em tempo real
+- Trata erros de criação
+
+#### Deleção de Usuários
+```bash
+./scripts/delete_users.sh
+```
+- Deleta todos os usuários do sistema
+- Mostra progresso em tempo real
+- Verifica status de cada deleção
+- Relatório final de sucesso/falhas
+
+### API REST
+- 📄 Documentação Swagger em `/docs`
+- 🔄 Suporte a paginação (`skip` e `limit`)
+- ✅ Validação de dados
+- 🔍 Busca por ID e email
+- 📝 CRUD completo de usuários
 
 ## 🧪 Testes
 
@@ -118,33 +159,6 @@ curl -X PUT http://localhost:8000/users/{id} \
 # Excluir usuário (substitua {id} pelo ID real)
 curl -X DELETE http://localhost:8000/users/{id}
 ```
-
-## 📊 Funcionalidades
-
-### Frontend (React)
-- ✅ Interface moderna e responsiva
-- ✅ Formulário de cadastro de usuários
-- ✅ Lista de usuários em tempo real
-- ✅ Edição inline de usuários
-- ✅ Exclusão de usuários com confirmação
-- ✅ Validação de dados
-- ✅ Mensagens de sucesso/erro
-- ✅ Loading states
-
-### Backend (FastAPI)
-- ✅ API RESTful completa
-- ✅ Operações CRUD (Create, Read, Update, Delete)
-- ✅ Validação de dados com Pydantic
-- ✅ Documentação automática (Swagger/OpenAPI)
-- ✅ CORS configurado
-- ✅ Health check endpoint
-- ✅ Tratamento de erros
-
-### Database (PostgreSQL)
-- ✅ Tabela de usuários com constraints
-- ✅ Timestamps automáticos
-- ✅ Índices para performance
-- ✅ Validação de dados no banco
 
 ## 🐳 Docker Services
 
