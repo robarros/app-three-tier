@@ -158,6 +158,7 @@ curl -X PUT http://localhost:8000/users/{id} \
 
 # Excluir usuário (substitua {id} pelo ID real)
 curl -X DELETE http://localhost:8000/users/{id}
+# Retorna: {"message":"User {id} deleted successfully"}
 ```
 
 ## 🐳 Docker Services

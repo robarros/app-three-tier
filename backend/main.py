@@ -123,7 +123,7 @@ def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get
         pass
     return db_user
 
-@app.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/users/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     if not crud.delete_user(db, user_id=user_id):
         raise HTTPException(
@@ -136,6 +136,8 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
         redis_client.delete(cache_key)
     except:
         pass
+    
+    return {"message": f"User {user_id} deleted successfully"}
 
 if __name__ == "__main__":
     import uvicorn
