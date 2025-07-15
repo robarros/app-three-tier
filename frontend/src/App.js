@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { userService } from './services/userService';
 
 function App() {
@@ -20,33 +20,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
-  useEffect(() => {
-    if (isSearching && searchTerm.trim()) {
-      searchUsers();
-    } else if (!searchTerm.trim()) {
-      setIsSearching(false);
-      loadUsers();
-    }
-  }, [pagination.currentPage]); // Reload when page changes
-
-  // Debounce para busca automática
-  useEffect(() => {
-    const delayedSearch = setTimeout(() => {
-      if (searchTerm.trim()) {
-        setIsSearching(true);
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
-        searchUsers();
-      } else {
-        setIsSearching(false);
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
-        loadUsers();
-      }
-    }, 500); // 500ms de delay
-
-    return () => clearTimeout(delayedSearch);
-  }, [searchTerm]);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
       const data = await userService.getUsers(pagination.currentPage, pagination.usersPerPage);
@@ -68,9 +42,9 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.currentPage, pagination.usersPerPage]);
 
-  const searchUsers = async () => {
+  const searchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const data = await userService.searchUsers(searchTerm, pagination.currentPage, pagination.usersPerPage);
@@ -92,7 +66,33 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, pagination.currentPage, pagination.usersPerPage]);
+
+  useEffect(() => {
+    if (isSearching && searchTerm.trim()) {
+      searchUsers();
+    } else if (!searchTerm.trim()) {
+      setIsSearching(false);
+      loadUsers();
+    }
+  }, [pagination.currentPage, isSearching, searchTerm, searchUsers, loadUsers]); // Reload when page changes
+
+  // Debounce para busca automática
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      if (searchTerm.trim()) {
+        setIsSearching(true);
+        setPagination(prev => ({ ...prev, currentPage: 1 }));
+        searchUsers();
+      } else {
+        setIsSearching(false);
+        setPagination(prev => ({ ...prev, currentPage: 1 }));
+        loadUsers();
+      }
+    }, 500); // 500ms de delay
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm, loadUsers, searchUsers]);
 
   const totalPages = Math.ceil(pagination.totalUsers / pagination.usersPerPage);
 
