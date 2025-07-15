@@ -46,6 +46,7 @@ services:
       DATABASE_URL: postgresql://appuser:apppassword@postgres:5432/userdb
       REDIS_URL: redis://redis:6379/0
       CACHE_EXPIRE_SECONDS: 300
+      LOG_LEVEL: INFO
     ports:
       - "8000:8000"
     depends_on:
