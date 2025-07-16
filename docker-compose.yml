@@ -26,8 +26,6 @@ services:
     container_name: app_redis
     ports:
       - "6379:6379"
-    # volumes:
-    #   - redis_data:/data
     networks:
       - app-network
     command: redis-server --appendonly yes
@@ -56,8 +54,6 @@ services:
         condition: service_healthy
     networks:
       - app-network
-    # volumes:
-    #   - ./backend:/app
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/ready"]
@@ -76,13 +72,34 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - app-network
-    # volumes:
-    #   - ./frontend:/app
-    #   - /app/node_modules
     environment:
       - REACT_APP_API_URL=http://localhost:8000
+
+  datadog-agent:
+    image: gcr.io/datadoghq/agent:7
+    container_name: datadog-agent
+    env_file:
+      - ./.env
+    environment:
+      - DD_ENV=dev
+      - DD_APM_ENABLED=true
+      - DD_APM_NON_LOCAL_TRAFFIC=true
+      - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+      # - DD_LOGS_ENABLED=true
+      # - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
+    ports:
+      - "8126:8126"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
