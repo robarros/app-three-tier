@@ -45,6 +45,11 @@ services:
       REDIS_URL: redis://redis:6379/0
       CACHE_EXPIRE_SECONDS: 300
       LOG_LEVEL: INFO
+      DD_SERVICE: backend-api
+      DD_ENV: dev
+      DD_VERSION: 1.0.0
+      DD_APM_ENABLED: true
+      DD_AGENT_HOST: datadog-agent
     ports:
       - "8000:8000"
     depends_on:
@@ -54,7 +59,6 @@ services:
         condition: service_healthy
     networks:
       - app-network
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/ready"]
       interval: 30s
@@ -80,7 +84,7 @@ services:
       - REACT_APP_API_URL=http://localhost:8000
 
   datadog-agent:
-    image: gcr.io/datadoghq/agent:7
+    image: datadog/agent:latest
     container_name: datadog-agent
     env_file:
       - ./.env
@@ -88,11 +92,14 @@ services:
       - DD_ENV=dev
       - DD_APM_ENABLED=true
       - DD_APM_NON_LOCAL_TRAFFIC=true
-      - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+      - DD_AGENT_HOST=datadog-agent
+      # - DD_PROCESS_AGENT_ENABLED=true
+      # - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
       # - DD_LOGS_ENABLED=true
       # - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
     ports:
-      - "8126:8126"
+      - "8126:8126/udp"  # APM
+      - "8125:8125/udp"  # DogStatsD
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /proc/:/host/proc/:ro
