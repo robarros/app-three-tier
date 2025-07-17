@@ -83,6 +83,21 @@ services:
     environment:
       - REACT_APP_API_URL=http://localhost:8000
 
+  node-js:
+    build:
+      context: ./node-js
+      dockerfile: Dockerfile
+    container_name: app_node_js
+    ports:
+      - "8080:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+    environment:
+      - API_URL=http://backend:8000
+
   datadog-agent:
     image: datadog/agent:latest
     container_name: datadog-agent
