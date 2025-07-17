@@ -115,3 +115,6 @@ volumes:
 networks:
   app-network:
     driver: bridge
+
+
+# https://myops.medium.com/monitor-your-server-and-docker-containers-with-datadog-for-free-317b553c8530
