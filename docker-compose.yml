@@ -33,6 +33,22 @@ services:
           "dbname": "userdb"
         }]
 
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    command:
+      - --configFile=/etc/traefik/traefik.yml
+    ports:
+      - "80:80"
+      - "8080:8080" # Dashboard
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
   redis:
     image: redis:alpine
     container_name: app_redis
@@ -81,6 +97,12 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend-router.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.backend-router.entrypoints=web"
+      - "traefik.http.routers.backend-router.priority=1"
+      - "traefik.http.services.backend-service.loadbalancer.server.port=8000"
 
   frontend:
     build:
@@ -92,10 +114,12 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+      traefik:
+        condition: service_started
     networks:
       - app-network
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_API_URL=http://localhost
       - LOG_LEVEL=INFO
 
   node-js:
@@ -104,7 +128,7 @@ services:
       dockerfile: Dockerfile
     container_name: app_node_js
     environment:
-      API_URL: http://backend:8000
+      API_URL: http://traefik
       LOG_LEVEL: INFO
       DD_SERVICE: nodejs-app
       DD_ENV: dev
@@ -112,10 +136,12 @@ services:
       DD_APM_ENABLED: true
       DD_AGENT_HOST: datadog-agent
     ports:
-      - "8080:3000"
+      - "9090:3000"
     depends_on:
       backend:
         condition: service_healthy
+      traefik:
+        condition: service_started
     networks:
       - app-network
 
@@ -144,39 +170,39 @@ services:
     networks:
       - app-network
 
-  redis-commander:
-    container_name: redis-commander
-    hostname: redis-commander
-    image: rediscommander/redis-commander:latest
-    environment:
-    - REDIS_HOSTS=local:redis:6379
-    ports:
-    - "9090:8081"
-    depends_on:
-      - redis
-    networks:
-      - app-network
+  # redis-commander:
+  #   container_name: redis-commander
+  #   hostname: redis-commander
+  #   image: rediscommander/redis-commander:latest
+  #   environment:
+  #   - REDIS_HOSTS=local:redis:6379
+  #   ports:
+  #   - "9090:8081"
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - app-network
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_LISTEN_PORT: 5050
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
-      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
-      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: '10'
-    ports:
-      - "5050:5050"
-    volumes:
-      - ./database/servers.json:/pgadmin4/servers.json
-      - ./database/passfile:/pgadmin4/passfile
-    depends_on:
-      - postgres
-    networks:
-      - app-network
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: pgadmin
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@admin.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin123
+  #     PGADMIN_CONFIG_SERVER_MODE: 'False'
+  #     PGADMIN_LISTEN_PORT: 5050
+  #     PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+  #     PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
+  #     PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: '10'
+  #   ports:
+  #     - "5050:5050"
+  #   volumes:
+  #     - ./database/servers.json:/pgadmin4/servers.json
+  #     - ./database/passfile:/pgadmin4/passfile
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - app-network
 
 volumes:
   postgres_data:
