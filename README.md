@@ -1,3 +1,4 @@
+
 # Aplicação de Gerenciamento de Usuários - 3 Camadas
 
 Uma aplicação completa em 3 camadas para gerenciamento de usuários, construída com React (frontend), FastAPI (backend) e PostgreSQL (database).
@@ -15,33 +16,51 @@ Uma aplicação completa em 3 camadas para gerenciamento de usuários, construí
 ## 📁 Estrutura do Projeto
 
 ```
-app-two-tier/
-├── docker-compose.yml          # Orquestração dos serviços
-├── backend/                    # API Python com FastAPI
+app-three-tier/
+├── docker-compose.yml            # Orquestração dos serviços
+├── HEALTH_CHECK_IMPROVEMENTS.md  # Melhorias de health check
+├── README.md                     # Este arquivo
+├── backend/                      # API Python com FastAPI
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   ├── main.py                # Aplicação principal
-│   ├── database.py            # Configuração do banco
-│   ├── schemas.py             # Modelos Pydantic
-│   ├── crud.py                # Operações CRUD
-│   └── init.sql               # Script de inicialização do DB
-├── frontend/                   # Interface React
+│   ├── main.py                   # Aplicação principal
+│   ├── database.py               # Configuração do banco
+│   ├── schemas.py                # Modelos Pydantic
+│   ├── crud.py                   # Operações CRUD
+│   └── init.sql                  # Script de inicialização do DB
+├── frontend/                     # Interface React
 │   ├── Dockerfile
 │   ├── package.json
 │   ├── public/
 │   │   └── index.html
 │   └── src/
 │       ├── index.js
-│       ├── App.js             # Componente principal
-│       ├── index.css          # Estilos
+│       ├── App.js                # Componente principal
+│       ├── index.css             # Estilos
 │       └── services/
-│           └── userService.js # Cliente API
-└── scripts/                   # Scripts utilitários
-    ├── start_app.sh          # Script para iniciar aplicação
-    ├── test_app.sh          # Script de testes
-    ├── create_users.sh      # Script para criar usuários em massa
-    └── delete_users.sh      # Script para deletar usuários
-
+│           └── userService.js    # Cliente API
+├── node-js/                      # Exemplo de app Node.js (extra)
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── server.js
+│   └── public/
+│       └── ...
+├── collections/                  # Coleções para testes (Bruno, JSON)
+│   ├── *.bru
+│   └── *.json
+├── database/                     # Configurações e scripts do banco
+│   ├── init.sql
+│   ├── passfile
+│   └── servers.json
+└── scripts/                      # Scripts utilitários
+    ├── start_app.sh              # Script para iniciar aplicação
+    ├── stop_app.sh               # Parar aplicação
+    ├── test_app.sh               # Script de testes
+    ├── create_users.sh           # Criar usuários em massa
+    ├── delete_all_users.sh       # Deletar todos usuários
+    ├── build_and_start.sh        # Build e start
+    ├── health_check.sh           # Health check
+    └── check_users.sh            # Verificação de usuários
 ```
 
 ## 🚀 Como Executar
@@ -53,9 +72,10 @@ app-two-tier/
 
 ### Iniciando a Aplicação
 
+
 1. **Clone o repositório** (se aplicável):
    ```bash
-   cd app-two-tier
+   cd app-three-tier
    ```
 
 2. **Execute o script de inicialização**:
@@ -86,6 +106,7 @@ app-two-tier/
 - ✏️ Edição inline de usuários
 - 📊 Indicador do total de usuários
 
+
 ### Scripts Utilitários
 
 #### Criação em Massa de Usuários
@@ -97,9 +118,9 @@ app-two-tier/
 - Mostra progresso em tempo real
 - Trata erros de criação
 
-#### Deleção de Usuários
+#### Deleção de Todos os Usuários
 ```bash
-./scripts/delete_users.sh
+./scripts/delete_all_users.sh
 ```
 - Deleta todos os usuários do sistema
 - Mostra progresso em tempo real

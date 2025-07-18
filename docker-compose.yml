@@ -12,7 +12,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - app-network
     healthcheck:
@@ -20,6 +20,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    labels:
+      com.datadoghq.ad.check_names: '["postgres"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: |
+        [{
+          "host": "%%host%%",
+          "dbm": true,
+          "port": "5432",
+          "username": "appuser",
+          "password": "apppassword",
+          "dbname": "userdb"
+        }]
 
   redis:
     image: redis:alpine
@@ -34,6 +46,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    labels:
+      com.datadoghq.ad.check_names: '["redisdb"]'
+      com.datadoghq.ad.init_configs: '[{}]'
+      com.datadoghq.ad.instances: '[{"host": "%%host%%", "port": "6379"}]'
 
   backend:
     build: 
@@ -126,6 +142,40 @@ services:
       - /proc/:/host/proc/:ro
       - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    networks:
+      - app-network
+
+  redis-commander:
+    container_name: redis-commander
+    hostname: redis-commander
+    image: rediscommander/redis-commander:latest
+    environment:
+    - REDIS_HOSTS=local:redis:6379
+    ports:
+    - "9090:8081"
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_LISTEN_PORT: 5050
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
+      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: '10'
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./database/servers.json:/pgadmin4/servers.json
+      - ./database/passfile:/pgadmin4/passfile
+    depends_on:
+      - postgres
     networks:
       - app-network
 
