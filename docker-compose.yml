@@ -119,7 +119,6 @@ services:
     networks:
       - app-network
 
-
   datadog-agent:
     image: datadog/agent:latest
     container_name: datadog-agent
