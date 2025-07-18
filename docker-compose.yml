@@ -1,6 +1,30 @@
-#version: '3.9'
+version: '3.9'
 
 services:
+  traefik:
+    image: traefik:latest  # Usando a última versão do Traefik
+    container_name: app_traefik
+    command:
+      - "--api.insecure=true"  # Habilita o dashboard - use apenas em desenvolvimento
+      - "--providers.docker=true"  # Habilita Docker como provedor
+      - "--providers.docker.exposedbydefault=false"  # Não expõe containers por padrão
+      - "--entrypoints.web.address=:80"  # Configura o entrypoint HTTP apenas
+      - "--providers.file.directory=/etc/traefik/dynamic"  # Diretório para configurações dinâmicas
+      - "--providers.file.watch=true"  # Observa mudanças nos arquivos de configuração
+    ports:
+      - "80:80"      # Porta HTTP apenas
+      - "8081:8080"  # Porta do Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Acesso ao socket do Docker
+      - ./traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro  # Configuração principal
+      - ./traefik:/etc/traefik/dynamic:ro  # Configurações dinâmicas
+    networks:
+      - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+
   postgres:
     image: postgres:15-alpine
     container_name: app_postgres
@@ -66,8 +90,11 @@ services:
       DD_VERSION: 1.0.0
       DD_APM_ENABLED: true
       DD_AGENT_HOST: datadog-agent
-    ports:
-      - "8000:8000"
+    # Removemos a exposição direta da porta, agora será gerenciada pelo Traefik
+    # ports:
+    #   - "8000:8000"
+    expose:
+      - "8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,22 +108,36 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.localhost`) || PathPrefix(`/api`)"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+      - "traefik.http.middlewares.backend-strip-prefix.stripprefix.prefixes=/api"
+      - "traefik.http.routers.backend.middlewares=backend-strip-prefix@docker"
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: app_frontend
-    ports:
-      - "3000:3000"
+    # Removemos a exposição direta da porta, agora será gerenciada pelo Traefik
+    # ports:
+    #   - "3000:3000"
+    expose:
+      - "3000"
     depends_on:
       backend:
         condition: service_healthy
     networks:
       - app-network
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
+      # Atualizamos a URL da API para usar o nome do host gerenciado pelo Traefik
+      - REACT_APP_API_URL=http://api.localhost
       - LOG_LEVEL=INFO
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`app.localhost`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 
   node-js:
     build:
@@ -104,6 +145,7 @@ services:
       dockerfile: Dockerfile
     container_name: app_node_js
     environment:
+      # Atualizamos a URL da API para apontar ao backend via nome do serviço interno
       API_URL: http://backend:8000
       LOG_LEVEL: INFO
       DD_SERVICE: nodejs-app
@@ -111,13 +153,20 @@ services:
       DD_VERSION: 1.0.0
       DD_APM_ENABLED: true
       DD_AGENT_HOST: datadog-agent
-    ports:
-      - "8080:3000"
+    # Removemos a exposição direta da porta, agora será gerenciada pelo Traefik
+    # ports:
+    #   - "8080:3000"
+    expose:
+      - "3000"
     depends_on:
       backend:
         condition: service_healthy
     networks:
       - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nodejs.rule=Host(`node.localhost`)"
+      - "traefik.http.services.nodejs.loadbalancer.server.port=3000"
 
 
   datadog-agent:
@@ -185,6 +234,7 @@ volumes:
 
 networks:
   app-network:
+    name: app-network
     driver: bridge
 
 

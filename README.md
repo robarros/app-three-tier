@@ -6,18 +6,39 @@ Uma aplicação completa em 3 camadas para gerenciamento de usuários, construí
 ## 🏗️ Arquitetura
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│    Frontend     │    │     Backend     │    │    Database     │
-│   React.js      │◄──►│    FastAPI      │◄──►│   PostgreSQL    │
-│   Port: 3000    │    │   Port: 8000    │    │   Port: 5432    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌───────────────┐         ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│    Traefik    │         │    Frontend     │    │     Backend     │    │    Database     │
+│  Proxy Reverso│◄───────►│   React.js      │◄──►│    FastAPI      │◄──►│   PostgreSQL    │
+│   Port: 80    │         │   Port: 3000    │    │   Port: 8000    │    │   Port: 5432    │
+└───────────────┘         └─────────────────┘    └─────────────────┘    └─────────────────┘
+       ▲
+       │
+       │
+ ┌─────┴─────┐
+ │   Client  │
+ └───────────┘
 ```
+
+## 🌐 URLs da Aplicação
+
+Com o Traefik configurado, você pode acessar os serviços através dos seguintes endereços:
+
+- **Dashboard Traefik**: http://traefik.localhost:8081
+- **API Backend**: http://api.localhost ou http://localhost/api
+- **Frontend**: http://app.localhost
+- **Node.js App**: http://node.localhost
+
+**Nota**: Adicione essas entradas ao seu arquivo `/etc/hosts` para que os nomes de domínio funcionem localmente.
 
 ## 📁 Estrutura do Projeto
 
 ```
 app-three-tier/
 ├── docker-compose.yml            # Orquestração dos serviços
+├── traefik/                      # Configurações do Traefik
+│   ├── traefik.yaml              # Configuração principal
+│   ├── hosts.yaml                # Configuração de hosts
+│   └── README.md                 # Documentação do Traefik
 ├── HEALTH_CHECK_IMPROVEMENTS.md  # Melhorias de health check
 ├── README.md                     # Este arquivo
 ├── backend/                      # API Python com FastAPI
