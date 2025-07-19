@@ -10,6 +10,10 @@ get {
   auth: inherit
 }
 
+headers {
+  X-API-KEY: 83AB3503-50AA-4B57-9386-B9F0BADF20131
+}
+
 assert {
   res.body.status: eq "ready"
   res.status: eq 200
