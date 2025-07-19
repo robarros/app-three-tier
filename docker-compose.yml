@@ -100,11 +100,12 @@ services:
       start_period: 30s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend-router.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.backend-router.rule=PathPrefix(`/api/v1`)"
       - "traefik.http.routers.backend-router.entrypoints=web"
-      - "traefik.http.routers.backend-router.priority=1"
+      - "traefik.http.routers.backend-router.priority=2"
       - "traefik.http.services.backend-service.loadbalancer.server.port=8000"
-      - "traefik.http.routers.backend-router.middlewares=my-traefik-api-key-auth@file"
+      - "traefik.http.routers.backend-router.middlewares=my-traefik-api-key-auth@file,strip-api-prefix"
+      - "traefik.http.middlewares.strip-api-prefix.stripprefix.prefixes=/api/v1"
       # - "traefik.http.routers.backend-router.middlewares=backend-auth"
       # - "traefik.http.middlewares.backend-auth.basicauth.users=user:$$2y$$05$$eMAW8yghzZVq59fU1JVnJu4xXDVJuSdJ//BjFpAt3VgkLuYiYkAke
 

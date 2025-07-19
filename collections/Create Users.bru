@@ -5,24 +5,20 @@ meta {
 }
 
 post {
-  url: http://localhost:9999/users/
+  url: http://localhost:9999/api/v1/users/
   body: json
   auth: inherit
 }
 
 headers {
   Content-Type: application/json
+  X-API-KEY: 83AB3503-50AA-4B57-9386-B9F0BADF2013
 }
 
 body:json {
   {
-    "name": "Ronaldo2 Teste",
-    "email": "teste221@exemplo.com",
+    "name": "devops1 Teste",
+    "email": "dev1@exemplo.com",
     "age": 30
   }
 }
-
-headers {
-  X-API-KEY: 83AB3503-50AA-4B57-9386-B9F0BADF2013
-}
-
