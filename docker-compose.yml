@@ -39,7 +39,7 @@ services:
     command:
       - --configFile=/etc/traefik/traefik.yml
     ports:
-      - "80:80"
+      - "9999:80"
       - "8080:8080" # Dashboard
     volumes:
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
@@ -121,7 +121,7 @@ services:
     networks:
       - app-network
     environment:
-      - REACT_APP_API_URL=http://localhost
+      - REACT_APP_API_URL=http://localhost:9999
       - LOG_LEVEL=INFO
       - DD_SERVICE=frontend-app
       - DD_ENV=dev
