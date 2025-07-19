@@ -109,28 +109,29 @@ services:
       # - "traefik.http.routers.backend-router.middlewares=backend-auth"
       # - "traefik.http.middlewares.backend-auth.basicauth.users=user:$$2y$$05$$eMAW8yghzZVq59fU1JVnJu4xXDVJuSdJ//BjFpAt3VgkLuYiYkAke
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: app_frontend
-    ports:
-      - "3000:3000"
-    depends_on:
-      backend:
-        condition: service_healthy
-      traefik:
-        condition: service_started
-    networks:
-      - app-network
-    environment:
-      - REACT_APP_API_URL=http://localhost:9999
-      - LOG_LEVEL=INFO
-      - DD_SERVICE=frontend-app
-      - DD_ENV=dev
-      - DD_VERSION=1.0.0
-      - DD_APM_ENABLED=true
-      - DD_AGENT_HOST=datadog-agent
+  # frontend-react:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: app_frontend
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     backend:
+  #       condition: service_healthy
+  #     traefik:
+  #       condition: service_started
+  #   networks:
+  #     - app-network
+  #   environment:
+  #     - REACT_APP_API_URL=http://localhost:9999/api/v1
+  #     - REACT_APP_API_KEY=83AB3503-50AA-4B57-9386-B9F0BADF2013
+  #     - LOG_LEVEL=INFO
+  #     - DD_SERVICE=frontend-app
+  #     - DD_ENV=dev
+  #     - DD_VERSION=1.0.0
+  #     - DD_APM_ENABLED=true
+  #     - DD_AGENT_HOST=datadog-agent
 
   node-js:
     build:
@@ -138,7 +139,8 @@ services:
       dockerfile: Dockerfile
     container_name: app_node_js
     environment:
-      API_URL: http://traefik
+      API_URL: http://traefik/api/v1
+      API_KEY: 83AB3503-50AA-4B57-9386-B9F0BADF2013
       LOG_LEVEL: INFO
       DD_SERVICE: nodejs-app
       DD_ENV: dev

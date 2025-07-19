@@ -8,6 +8,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const API_URL = process.env.API_URL || 'http://backend:8000';
+const API_KEY = process.env.API_KEY || '';
 
 // Middleware
 app.use(cors());
@@ -31,6 +32,7 @@ app.use('/api', async (req, res) => {
       ...data,
       headers: {
         'Content-Type': 'application/json',
+        'X-API-KEY': API_KEY
       },
     });
     
