@@ -25,9 +25,12 @@ tracing:
     http:
       endpoint: http://datadog-agent:4318
 
+
 experimental:
   plugins:
     traefik-api-key-auth:  # https://plugins.traefik.io/plugins/65f5043446079255c9ffd1ee/api-key-auth
       moduleName: "github.com/Septima/traefik-api-key-auth"
       version: "v0.2.3"
+
+
 

@@ -8,25 +8,11 @@ services:
       POSTGRES_DB: userdb
       POSTGRES_USER: appuser
       POSTGRES_PASSWORD: apppassword
-      # Datadog APM environment variables
-      DD_SERVICE: postgres-db
-      DD_ENV: dev
-      DD_VERSION: 15.0
-      DD_APM_ENABLED: true
-      DD_AGENT_HOST: datadog-agent
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-    command: [
-      "postgres",
-      "-c", "shared_preload_libraries=pg_stat_statements",
-      "-c", "pg_stat_statements.max=10000",
-      "-c", "pg_stat_statements.track=all",
-      "-c", "track_io_timing=on",
-      "-c", "track_functions=all"
-    ]
     networks:
       - app-network
     healthcheck:
@@ -73,13 +59,6 @@ services:
   redis:
     image: redis:alpine
     container_name: app_redis
-    environment:
-      # Datadog APM environment variables
-      DD_SERVICE: redis-cache
-      DD_ENV: dev
-      DD_VERSION: 7.0
-      DD_APM_ENABLED: true
-      DD_AGENT_HOST: datadog-agent
     ports:
       - "6379:6379"
     networks:

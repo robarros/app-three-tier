@@ -1,18 +1,29 @@
 FROM node:18-alpine
 
+# Add curl for healthcheck
+RUN apk add --no-cache curl
+
+# Create app user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
 WORKDIR /usr/src/app
 
-# Copiar package.json e package-lock.json
+# Copy package files first for better caching
 COPY package*.json ./
 
-# Instalar dependências
-RUN npm install
+# Install dependencies
+RUN npm install --production && npm cache clean --force
 
-# Copiar o restante dos arquivos
+# Copy the rest of the files
 COPY . .
 
-# Expor a porta que o app vai usar
+# Change ownership to nodejs user
+RUN chown -R nodejs:nodejs /usr/src/app
+USER nodejs
+
+# Expose port
 EXPOSE 3000
 
-# Comando para iniciar a aplicação
+# Start the application
 CMD ["node", "server.js"]
