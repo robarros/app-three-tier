@@ -8,3 +8,8 @@ http:
           keys:
             - 83AB3503-50AA-4B57-9386-B9F0BADF2013
             - 12345678-1234-5678-1234-567812345678
+
+    # strip-api-prefix:
+    #     stripPrefix:
+    #       prefixes:
+    #         - "/api/v1"
