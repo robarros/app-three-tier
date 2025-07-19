@@ -104,7 +104,7 @@ services:
       - "traefik.http.routers.backend-router.entrypoints=web"
       - "traefik.http.routers.backend-router.priority=2"
       - "traefik.http.services.backend-service.loadbalancer.server.port=8000"
-      - "traefik.http.routers.backend-router.middlewares=my-traefik-api-key-auth@file,strip-api-prefix"
+      - "traefik.http.routers.backend-router.middlewares=my-traefik-api-key-auth@file,strip-api-prefix@docker"
       - "traefik.http.middlewares.strip-api-prefix.stripprefix.prefixes=/api/v1"
       # - "traefik.http.routers.backend-router.middlewares=backend-auth"
       # - "traefik.http.middlewares.backend-auth.basicauth.users=user:$$2y$$05$$eMAW8yghzZVq59fU1JVnJu4xXDVJuSdJ//BjFpAt3VgkLuYiYkAke
@@ -156,6 +156,12 @@ services:
         condition: service_started
     networks:
       - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nodejs-router.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.nodejs-router.entrypoints=web"
+      - "traefik.http.routers.nodejs-router.priority=1"
+      - "traefik.http.services.nodejs-service.loadbalancer.server.port=3000"
 
   datadog-agent:
     image: datadog/agent:latest
